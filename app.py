@@ -14,11 +14,10 @@ def parse_to_json(data: str) -> dict:
     is_multiline = False
 
     for line in lines:
-        if not is_multiline:
-            # Split by tab characters
+        # If the line contains a tab, it might be a valid object/key/value line
+        if "\t" in line:
             parts = line.split("\t")
             if len(parts) == 3:
-                # Extract object name, key, and value
                 object_name, key, value = parts
 
                 # Remove surrounding quotes and whitespace
@@ -26,7 +25,7 @@ def parse_to_json(data: str) -> dict:
                 key = key.strip().strip("\"'")
                 value = value.strip("\"'")  # Handle value
 
-                # Check if the value starts a multi-line string
+                # If this value is multi-line (starts with triple quotes and isn't closed)
                 if value.startswith('"""') and not value.endswith('"""'):
                     is_multiline = True
                     current_object = object_name
@@ -40,8 +39,8 @@ def parse_to_json(data: str) -> dict:
             else:
                 st.error(f"Invalid line format: '{line}'. Each line must have three tab-separated values.")
                 return {}
-        else:
-            # If currently handling a multi-line value, continue appending
+        elif is_multiline:
+            # If currently handling a multi-line value, continue appending lines
             if line.endswith('"""'):
                 is_multiline = False
                 current_value += "\n" + line[:-3]  # Remove closing triple quotes
@@ -50,7 +49,11 @@ def parse_to_json(data: str) -> dict:
                     json_result[current_object] = {}
                 json_result[current_object][current_key] = current_value.replace("\n", "\\n")
             else:
+                # Continue appending to the current value
                 current_value += "\n" + line
+        else:
+            st.error(f"Invalid line format (missing tab-separated values): '{line}'")
+            return {}
 
     # Handle edge case: If multiline is still True at the end
     if is_multiline:
