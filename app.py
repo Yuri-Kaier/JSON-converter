@@ -4,35 +4,37 @@ import json
 def parse_to_json(data: str) -> dict:
     """
     Parses tab-separated text into a JSON object.
-    Ensures values retain single/double quotes and line breaks in JSON format.
+    Replaces line breaks inside values with JSON-compatible \\n.
     """
-    lines = data.strip().split("\n")  # Split input by line breaks
     json_result = {}
-    
+    current_object = None
+
+    # Replace actual line breaks within the data with a special marker
+    normalized_data = data.replace("\n", "\\n")
+    lines = normalized_data.split("\\n")  # Split based on the normalized line breaks
+
     for line in lines:
         # Split by tab characters
         parts = line.split("\t")
-        
+
         if len(parts) == 3:
             # Extract object name, key, and value
             object_name, key, value = parts
 
-            # Ensure all parts are stripped of extra whitespace
-            object_name = object_name.strip()
-            key = key.strip()
-            value = value.strip()
+            # Remove surrounding quotes (if any) and extra whitespace
+            object_name = object_name.strip().strip("\"'")
+            key = key.strip().strip("\"'")
+            value = value.strip().strip("\"'")
 
-            # Escape quotes and ensure newlines are preserved
-            value = value.replace("\n", "\\n")
-            value = value.replace("\"", "\\\"")
-            value = value.replace("\'", "\\\'")
-            
+            # Restore escaped line breaks as \\n for JSON compatibility
+            value = value.replace("\\n", "\n")  # Optional: Show raw line breaks
+            value = value.replace("\n", "\\n")  # JSON-escaped line breaks
+
             # Add to the JSON structure
             if object_name not in json_result:
                 json_result[object_name] = {}
             json_result[object_name][key] = value
         else:
-            # Show error for malformed input
             st.error(f"Invalid line format: '{line}'. Each line must have three tab-separated values.")
             return {}
 
@@ -44,7 +46,7 @@ st.title("Tab-separated Data to JSON Converter")
 st.write("Paste your tab-separated data below:")
 st.markdown("""
 #### Example Input:
-Book cover\ta\t'New Game' Book cover\tb\t"Achievements with "quotes"" Book cover\tc\tMulti-line\nValue Book cover\td\tClose Game
+Book cover\ta\t'New Game with \nline breaks' Book cover\tb\t"Achievements with \n"quotes" and line breaks" Book cover\tc\tMulti-line\nValue Book cover\td\tClose Game
 """)
 
 # Input text area
