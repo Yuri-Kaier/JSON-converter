@@ -62,12 +62,6 @@ def parse_to_json(data: str) -> dict:
 # Streamlit UI
 st.title("Tab-separated Data to JSON Converter")
 
-st.write("Paste your tab-separated data below:")
-st.markdown("""
-#### Example Input:
-Book cover\ta\t"""New Game"" Hello world" Book cover\tb\tAchievements' Book cover\tc\tCredits Book cover\td\tClose Game
-""")
-
 # Input text area
 input_data = st.text_area(
     "Input Data",
@@ -87,5 +81,3 @@ if st.button("Convert to JSON"):
             st.error(f"An unexpected error occurred: {e}")
     else:
         st.warning("Please paste data before clicking 'Convert to JSON'.")
-
-st.markdown("Developed by [Your Name](#).")  # Add credits or customize
