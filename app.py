@@ -4,12 +4,11 @@ import json
 def parse_to_json(data: str) -> dict:
     """
     Parses tab-separated text into a JSON object.
-    Handles quotes (single or double) and line breaks.
+    Ensures values retain single/double quotes and line breaks in JSON format.
     """
     lines = data.strip().split("\n")  # Split input by line breaks
     json_result = {}
-    current_object = None
-
+    
     for line in lines:
         # Split by tab characters
         parts = line.split("\t")
@@ -18,12 +17,17 @@ def parse_to_json(data: str) -> dict:
             # Extract object name, key, and value
             object_name, key, value = parts
 
-            # Remove surrounding quotes from values, if present
-            object_name = object_name.strip().strip("\"'")
-            key = key.strip().strip("\"'")
-            value = value.strip().strip("\"'")
+            # Ensure all parts are stripped of extra whitespace
+            object_name = object_name.strip()
+            key = key.strip()
+            value = value.strip()
 
-            # Add to JSON structure
+            # Escape quotes and ensure newlines are preserved
+            value = value.replace("\n", "\\n")
+            value = value.replace("\"", "\\\"")
+            value = value.replace("\'", "\\\'")
+            
+            # Add to the JSON structure
             if object_name not in json_result:
                 json_result[object_name] = {}
             json_result[object_name][key] = value
@@ -40,7 +44,7 @@ st.title("Tab-separated Data to JSON Converter")
 st.write("Paste your tab-separated data below:")
 st.markdown("""
 #### Example Input:
-Book cover\ta\tNew Game Book cover\tb\tAchievements Book cover\tc\tCredits Book cover\td\tClose Game
+Book cover\ta\t'New Game' Book cover\tb\t"Achievements with "quotes"" Book cover\tc\tMulti-line\nValue Book cover\td\tClose Game
 """)
 
 # Input text area
