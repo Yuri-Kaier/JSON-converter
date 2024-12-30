@@ -4,7 +4,7 @@ import json
 def parse_to_json(data: str) -> dict:
     """
     Parses tab-separated text into a JSON object.
-    Handles multi-line values and ensures JSON-compatible escaping.
+    Handles multi-line values, quotes, and ensures JSON-compatible escaping.
     """
     lines = data.strip().split("\n")  # Split input by actual line breaks
     json_result = {}
@@ -24,7 +24,7 @@ def parse_to_json(data: str) -> dict:
                 # Remove surrounding quotes and whitespace
                 object_name = object_name.strip().strip("\"'")
                 key = key.strip().strip("\"'")
-                value = value.strip("\"'")  # Start handling value
+                value = value.strip("\"'")  # Handle value
 
                 # Check if the value starts a multi-line string
                 if value.startswith('"""') and not value.endswith('"""'):
