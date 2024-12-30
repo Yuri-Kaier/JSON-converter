@@ -43,6 +43,7 @@ def parse_to_json_from_csv(csv_data: str) -> dict:
                 # Save the multi-line value to the result
                 if current_object not in json_result:
                     json_result[current_object] = {}
+                # Ensure that the value keeps its quotes intact
                 json_result[current_object][current_key] = current_value.replace("\n", "\\n")
             else:
                 current_value += "\n" + value
@@ -50,6 +51,7 @@ def parse_to_json_from_csv(csv_data: str) -> dict:
             # Add the value directly if it's a single line
             if object_name not in json_result:
                 json_result[object_name] = {}
+            # Preserve quotes within the value (single or double)
             json_result[object_name][key] = value
 
     # Handle edge case: If multiline is still True at the end
