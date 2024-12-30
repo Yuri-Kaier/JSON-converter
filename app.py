@@ -4,39 +4,58 @@ import json
 def parse_to_json(data: str) -> dict:
     """
     Parses tab-separated text into a JSON object.
-    Replaces line breaks inside values with JSON-compatible \\n.
+    Handles multi-line values and ensures JSON-compatible escaping.
     """
+    lines = data.strip().split("\n")  # Split input by actual line breaks
     json_result = {}
     current_object = None
-
-    # Replace actual line breaks within the data with a special marker
-    normalized_data = data.replace("\n", "\\n")
-    lines = normalized_data.split("\\n")  # Split based on the normalized line breaks
+    current_key = None
+    current_value = None
+    is_multiline = False
 
     for line in lines:
-        # Split by tab characters
-        parts = line.split("\t")
+        if not is_multiline:
+            # Split by tab characters
+            parts = line.split("\t")
+            if len(parts) == 3:
+                # Extract object name, key, and value
+                object_name, key, value = parts
 
-        if len(parts) == 3:
-            # Extract object name, key, and value
-            object_name, key, value = parts
+                # Remove surrounding quotes and whitespace
+                object_name = object_name.strip().strip("\"'")
+                key = key.strip().strip("\"'")
+                value = value.strip("\"'")  # Start handling value
 
-            # Remove surrounding quotes (if any) and extra whitespace
-            object_name = object_name.strip().strip("\"'")
-            key = key.strip().strip("\"'")
-            value = value.strip().strip("\"'")
-
-            # Restore escaped line breaks as \\n for JSON compatibility
-            value = value.replace("\\n", "\n")  # Optional: Show raw line breaks
-            value = value.replace("\n", "\\n")  # JSON-escaped line breaks
-
-            # Add to the JSON structure
-            if object_name not in json_result:
-                json_result[object_name] = {}
-            json_result[object_name][key] = value
+                # Check if the value starts a multi-line string
+                if value.startswith('"""') and not value.endswith('"""'):
+                    is_multiline = True
+                    current_object = object_name
+                    current_key = key
+                    current_value = value[3:]  # Remove the opening triple quotes
+                else:
+                    # Add the value directly if it's a single line
+                    if object_name not in json_result:
+                        json_result[object_name] = {}
+                    json_result[object_name][key] = value
+            else:
+                st.error(f"Invalid line format: '{line}'. Each line must have three tab-separated values.")
+                return {}
         else:
-            st.error(f"Invalid line format: '{line}'. Each line must have three tab-separated values.")
-            return {}
+            # If currently handling a multi-line value, continue appending
+            if line.endswith('"""'):
+                is_multiline = False
+                current_value += "\n" + line[:-3]  # Remove closing triple quotes
+                # Save the multi-line value
+                if current_object not in json_result:
+                    json_result[current_object] = {}
+                json_result[current_object][current_key] = current_value.replace("\n", "\\n")
+            else:
+                current_value += "\n" + line
+
+    # Handle edge case: If multiline is still True at the end
+    if is_multiline:
+        st.error("Unterminated multi-line value detected. Please check your input.")
+        return {}
 
     return json_result
 
@@ -46,7 +65,7 @@ st.title("Tab-separated Data to JSON Converter")
 st.write("Paste your tab-separated data below:")
 st.markdown("""
 #### Example Input:
-Book cover\ta\t'New Game with \nline breaks' Book cover\tb\t"Achievements with \n"quotes" and line breaks" Book cover\tc\tMulti-line\nValue Book cover\td\tClose Game
+Book cover\ta\t"""New Game"" Hello world" Book cover\tb\tAchievements' Book cover\tc\tCredits Book cover\td\tClose Game
 """)
 
 # Input text area
